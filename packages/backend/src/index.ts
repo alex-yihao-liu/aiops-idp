@@ -7,8 +7,24 @@
  */
 
 import { createBackend } from '@backstage/backend-defaults';
+import { rootHttpRouterServiceFactory } from '@backstage/backend-defaults/rootHttpRouter';
 
 const backend = createBackend();
+
+backend.add(
+  rootHttpRouterServiceFactory({
+    configure({ app, middleware, healthRouter, routes }) {
+      app.use(middleware.helmet());
+      app.use(middleware.cors());
+      app.use(middleware.logging());
+      app.use(middleware.rateLimit());
+      app.use(healthRouter);
+      app.use(routes);
+      app.use(middleware.notFound());
+      app.use(middleware.error());
+    },
+  }),
+);
 
 backend.add(import('@backstage/plugin-app-backend'));
 backend.add(import('@backstage/plugin-proxy-backend'));
@@ -27,6 +43,7 @@ backend.add(import('@backstage/plugin-techdocs-backend'));
 backend.add(import('@backstage/plugin-auth-backend'));
 // See https://backstage.io/docs/backend-system/building-backends/migrating#the-auth-plugin
 backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
+backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
 // See https://backstage.io/docs/auth/guest/provider
 
 // catalog plugin
@@ -58,6 +75,9 @@ backend.add(import('@backstage/plugin-search-backend-module-techdocs'));
 
 // kubernetes plugin
 backend.add(import('@backstage/plugin-kubernetes-backend'));
+
+// jira dashboard plugin
+backend.add(import('@axis-backstage/plugin-jira-dashboard-backend'));
 
 // notifications and signals plugins
 backend.add(import('@backstage/plugin-notifications-backend'));

@@ -1,0 +1,49 @@
+name: PR
+
+"on":
+  pull_request:
+    branches:
+      - master
+      - main
+
+jobs:
+  build-test:
+    runs-on: [self-hosted, Windows, X64, aioops-local, kind]
+
+    defaults:
+      run:
+        shell: powershell
+
+    env:
+      IMAGE_NAME: backstage:pr-test
+      HTTP_PROXY: ${{ secrets.BUILD_HTTP_PROXY }}
+      HTTPS_PROXY: ${{ secrets.BUILD_HTTPS_PROXY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show tool versions
+        run: |
+          docker version
+          node --version
+          yarn --version
+
+      - name: Build Backstage backend bundle
+        run: |
+          yarn install --immutable
+          yarn tsc
+          yarn build:backend
+
+      - name: Build Docker image
+        run: |
+          $args = @("build", "--tag", $env:IMAGE_NAME, "--file", "packages/backend/Dockerfile")
+          foreach ($name in @("HTTP_PROXY", "HTTPS_PROXY")) {
+            $value = [Environment]::GetEnvironmentVariable($name)
+            if ($value) {
+              $args += @("--build-arg", "$name=$value")
+              $args += @("--build-arg", "$($name.ToLowerInvariant())=$value")
+            }
+          }
+          $args += "."
+          docker @args
