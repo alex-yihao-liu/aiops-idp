@@ -16,6 +16,12 @@ FROM node:24-trixie-slim
 
 ARG APT_MIRROR
 ARG APT_SECURITY_MIRROR
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
 
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
@@ -61,6 +67,14 @@ COPY --chown=node:node yarn.lock package.json packages/backend/dist/skeleton.tar
 RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
+    export HTTP_PROXY="${HTTP_PROXY:-$http_proxy}" && \
+    export HTTPS_PROXY="${HTTPS_PROXY:-$https_proxy}" && \
+    export NO_PROXY="${NO_PROXY:-$no_proxy}" && \
+    export http_proxy="$HTTP_PROXY" && \
+    export https_proxy="$HTTPS_PROXY" && \
+    export no_proxy="$NO_PROXY" && \
+    export YARN_HTTP_PROXY="$HTTP_PROXY" && \
+    export YARN_HTTPS_PROXY="$HTTPS_PROXY" && \
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
 # This will include the examples, if you don't need these simply remove this line
