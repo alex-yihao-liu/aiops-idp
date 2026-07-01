@@ -25,8 +25,8 @@ jobs:
       K8S_CONTAINER: backstage
       KUBE_CONTEXT: default
       EXPECTED_KUBE_SERVER: https://192.168.1.222:6443
-      HTTP_PROXY: ${{ secrets.BUILD_HTTP_PROXY }}
-      HTTPS_PROXY: ${{ secrets.BUILD_HTTPS_PROXY }}
+      HTTP_PROXY: ${{ secrets.BUILD_HTTP_PROXY || 'http://host.docker.internal:7890' }}
+      HTTPS_PROXY: ${{ secrets.BUILD_HTTPS_PROXY || 'http://host.docker.internal:7890' }}
       NO_PROXY: 127.0.0.1,localhost,10.0.0.0/8,10.43.0.0/16,10.42.0.0/16,192.168.1.222,192.168.1.222:30500,.svc,.cluster.local
 
     steps:

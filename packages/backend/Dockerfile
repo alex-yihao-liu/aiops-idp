@@ -14,22 +14,25 @@
 
 FROM node:24-trixie-slim
 
+ARG APT_MIRROR
+ARG APT_SECURITY_MIRROR
+
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
 
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends python3 g++ build-essential pkg-config libsecret-1-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install sqlite3 dependencies. You can skip this if you don't use sqlite3 in the image,
+# Also install sqlite3 dependencies. You can skip libsqlite3-dev if you don't use sqlite3 in the image,
 # in which case you should also move better-sqlite3 to "devDependencies" in package.json.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libsqlite3-dev && \
+    if [ -n "$APT_MIRROR" ]; then \
+      sed -i "s|^URIs: http://deb.debian.org/debian$|URIs: $APT_MIRROR|" /etc/apt/sources.list.d/debian.sources; \
+    fi && \
+    if [ -n "$APT_SECURITY_MIRROR" ]; then \
+      sed -i "s|^URIs: http://deb.debian.org/debian-security$|URIs: $APT_SECURITY_MIRROR|" /etc/apt/sources.list.d/debian.sources; \
+    fi && \
+    apt-get update -o Acquire::Retries=3 && \
+    apt-get install -y --no-install-recommends python3 g++ build-essential pkg-config libsecret-1-dev libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # From here on we use the least-privileged `node` user to run the backend.

@@ -13,7 +13,9 @@
     "lint": "backstage-cli package lint",
     "test": "backstage-cli package test",
     "clean": "backstage-cli package clean",
-    "build-image": "docker build ../.. -f Dockerfile --tag backstage"
+    "build-image": "docker build ../.. -f Dockerfile --tag backstage",
+    "build-image:proxy": "docker build ../.. -f Dockerfile --tag backstage --build-arg HTTP_PROXY=http://host.docker.internal:7890 --build-arg HTTPS_PROXY=http://host.docker.internal:7890 --build-arg http_proxy=http://host.docker.internal:7890 --build-arg https_proxy=http://host.docker.internal:7890",
+    "build-image:mirror": "docker build ../.. -f Dockerfile --tag backstage --build-arg HTTP_PROXY=http://host.docker.internal:7890 --build-arg HTTPS_PROXY=http://host.docker.internal:7890 --build-arg http_proxy=http://host.docker.internal:7890 --build-arg https_proxy=http://host.docker.internal:7890 --build-arg APT_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/debian --build-arg APT_SECURITY_MIRROR=https://mirrors.tuna.tsinghua.edu.cn/debian-security"
   },
   "dependencies": {
     "@axis-backstage/plugin-jira-dashboard-backend": "^6.1.3",
