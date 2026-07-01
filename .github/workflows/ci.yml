@@ -28,6 +28,9 @@ jobs:
       HTTP_PROXY: ${{ secrets.BUILD_HTTP_PROXY || 'http://host.docker.internal:7890' }}
       HTTPS_PROXY: ${{ secrets.BUILD_HTTPS_PROXY || 'http://host.docker.internal:7890' }}
       NO_PROXY: 127.0.0.1,localhost,10.0.0.0/8,10.43.0.0/16,10.42.0.0/16,192.168.1.222,192.168.1.222:30500,.svc,.cluster.local
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
     steps:
       - name: Checkout
@@ -107,6 +110,26 @@ jobs:
           kubectl --context $env:KUBE_CONTEXT apply -f D:\AIOps\k8s\aiops\backstage\backstage-kubernetes-rbac.yaml
           kubectl --context $env:KUBE_CONTEXT apply -f D:\AIOps\k8s\aiops\backstage\backstage-config.yaml
           kubectl --context $env:KUBE_CONTEXT apply -f D:\AIOps\k8s\aiops\backstage\backstage-github-oauth-secret.yaml
+
+          if (-not $env:JIRA_TOKEN) {
+            throw "GitHub Actions secret JIRA_TOKEN is required to create backstage/backstage-jira."
+          }
+
+          $secretArgs = @(
+            "--context", $env:KUBE_CONTEXT,
+            "-n", $env:K8S_NAMESPACE,
+            "create", "secret", "generic", "backstage-jira",
+            "--from-literal=JIRA_TOKEN=$env:JIRA_TOKEN"
+          )
+          if ($env:JIRA_EMAIL) {
+            $secretArgs += "--from-literal=JIRA_EMAIL=$env:JIRA_EMAIL"
+          }
+          if ($env:JIRA_API_TOKEN) {
+            $secretArgs += "--from-literal=JIRA_API_TOKEN=$env:JIRA_API_TOKEN"
+          }
+          $secretArgs += @("--dry-run=client", "-o", "yaml")
+          kubectl @secretArgs | kubectl --context $env:KUBE_CONTEXT apply -f -
+
           kubectl --context $env:KUBE_CONTEXT apply -f D:\AIOps\k8s\aiops\backstage\backstage.yaml
           kubectl --context $env:KUBE_CONTEXT apply -f D:\AIOps\k8s\aiops\backstage\backstage-service.yaml
 
